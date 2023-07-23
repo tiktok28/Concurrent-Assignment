@@ -61,25 +61,37 @@ class Theatre {
                 if(numberOfSeats > availableSeats){
                     numberOfSeats = availableSeats;
                 }
-                int[] customerSeats = new int[numberOfSeats];
+                ArrayList<Integer> customerSeats = new ArrayList<Integer>();
                 while (count != numberOfSeats) {
                     if(!check()){
                         System.out.println("No seat available");
                         return;
                     }
                     int seatNumber = random.nextInt(20);
-                    if (seats[seatNumber] == null) {
-                        customerSeats[count] = seatNumber;
+                    if (seats[seatNumber] == null && !customerSeats.contains(seatNumber)) {
+                        customerSeats.add(seatNumber);
                         count++;
                     }
                 }
-                for (int i = 0; i < customerSeats.length; i++) {
-                    System.out.println(Thread.currentThread().getName() + " booking seat " + customerSeats[i] + " for " + theatreName);
+                availableSeats = availableSeats - numberOfSeats;
+                for (int i = 0; i < customerSeats.size(); i++) {
+//                    System.out.println(Thread.currentThread().getName() + " booking seat " + customerSeats[i] + " for " + theatreName);
                 }
-                for (int i = 0; i < customerSeats.length; i++) {
-                    seats[customerSeats[i]] = customerName;
-                    availableSeats--;
-                    System.out.println(Thread.currentThread().getName() + " has booked seat " + customerSeats[i] + " for " + theatreName);
+                for (int i = 0; i < customerSeats.size(); i++) {
+                    seats[customerSeats.get(i)] = customerName;
+//                    System.out.println(Thread.currentThread().getName() + " has booked seat " + customerSeats[i] + " for " + theatreName);
+                }
+                for (int i = 0; i < seats.length; i++){
+                    if(seats[i] == null){
+                        System.out.println("empty");
+                    }
+                    else {
+                        System.out.println(seats[i]);
+                    }
+                }
+//                System.out.println(customerName);
+                for(int i = 0; i < customerSeats.size(); i++){
+                    System.out.println(customerName + " booking " + customerSeats.get(i) + " at " + theatreName);
                 }
             } else {
                 isFull = true;
@@ -110,7 +122,7 @@ class Customer implements Runnable {
     }
 }
 
-public class Main {
+public class Q1 {
     public static void main(String[] args) {
         Cinema cinema = new Cinema(new ArrayList<Theatre>(Arrays.asList(new Theatre("Theatre 1"), new Theatre("Theatre 2"), new Theatre("Theatre 3"))));
         int numOfCustomers = 100;
