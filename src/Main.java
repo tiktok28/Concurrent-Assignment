@@ -1,87 +1,135 @@
+import java.util.Arrays;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.ArrayList;
 
 class Cinema {
-    Theatre[] theatres;
-    public Cinema(Theatre[] theatres){
+    ArrayList<Theatre> theatres;
+    ArrayList<Theatre> availableTheatres = new ArrayList<Theatre>();
+
+    public Cinema(ArrayList<Theatre> theatres) {
         this.theatres = theatres;
+        for (Theatre theatre : theatres) {
+            if (!theatre.isFull()) {
+                availableTheatres.add(theatre);
+            }
+        }
+    }
+
+    public synchronized ArrayList<Theatre> checkAvailability() {
+        availableTheatres.clear();
+        for (Theatre theatre : theatres) {
+            if (!theatre.isFull()) {
+                availableTheatres.add(theatre);
+            }
+        }
+        return availableTheatres;
     }
 }
-
 class Theatre {
     Random random = new Random();
     String theatreName;
     String[] seats = new String[20];
     int availableSeats = 20;
+    private boolean isFull = false;
 
     public Theatre(String theatreName) {
         this.theatreName = theatreName;
     }
 
-    public void bookSeat(int numberOfSeats) {
-        if (availableSeats != 0) {
-            int count = 0;
-            int[] customerSeats = new int[numberOfSeats];
-            while(count != numberOfSeats){
-                int seatNumber = random.nextInt(20);
-                if (seats[seatNumber] == null) {
-                    customerSeats[count] = seatNumber;
-                    count ++;
-                }
+    public boolean isFull() {
+        return this.isFull;
+    }
+
+    public boolean check() {
+        for (String seat : seats) {
+            if(seat == null){
+                return true;
             }
-            synchronized (this) {
+        }
+        return false;
+    }
+
+    public synchronized void bookSeat(int numberOfSeats, String customerName) {
+        if (isFull) {
+            return;
+        }
+        else{
+            if (availableSeats != 0) {
+                int count = 0;
+                if(numberOfSeats > availableSeats){
+                    numberOfSeats = availableSeats;
+                }
+                int[] customerSeats = new int[numberOfSeats];
+                while (count != numberOfSeats) {
+                    if(!check()){
+                        System.out.println("No seat available");
+                        return;
+                    }
+                    int seatNumber = random.nextInt(20);
+                    if (seats[seatNumber] == null) {
+                        customerSeats[count] = seatNumber;
+                        count++;
+                    }
+                }
                 for (int i = 0; i < customerSeats.length; i++) {
                     System.out.println(Thread.currentThread().getName() + " booking seat " + customerSeats[i] + " for " + theatreName);
                 }
-                try {
-                    Thread.sleep(random.nextInt(500) + 500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
                 for (int i = 0; i < customerSeats.length; i++) {
-                    seats[customerSeats[i]] = Thread.currentThread().getName();
+                    seats[customerSeats[i]] = customerName;
                     availableSeats--;
                     System.out.println(Thread.currentThread().getName() + " has booked seat " + customerSeats[i] + " for " + theatreName);
                 }
+            } else {
+                isFull = true;
             }
-        }
-        else{
-            System.out.println(theatreName + " is full!");
         }
     }
 }
 
 class Customer implements Runnable {
     Cinema cinema;
+    String customerName;
     Random random = new Random();
-    public Customer(Cinema cinema){
+
+    public Customer(Cinema cinema, String customerName) {
         this.cinema = cinema;
+        this.customerName = customerName;
     }
 
     @Override
-    public void run(){
-        cinema.theatres[random.nextInt(3)].bookSeat(random.nextInt(3)+1);
+    public void run() {
+        ArrayList<Theatre> availableTheatres = cinema.checkAvailability();
+        availableTheatres.get(random.nextInt(availableTheatres.size())).bookSeat(random.nextInt(3)+1, customerName);
+        try {
+            Thread.sleep(random.nextInt(500) + 500);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
 
 public class Main {
     public static void main(String[] args) {
-        Cinema cinema = new Cinema(new Theatre[]{new Theatre("Theatre 1"), new Theatre("Theatre 2"), new Theatre("Theatre 3")});
-        Thread[] threads = new Thread[10];
-        ExecutorService executorService = Executors.newFixedThreadPool(10);
-        for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Thread(new Customer(cinema));
-            threads[i].setName("C" + (i + 1));
-            executorService.submit(threads[i]);
+        Cinema cinema = new Cinema(new ArrayList<Theatre>(Arrays.asList(new Theatre("Theatre 1"), new Theatre("Theatre 2"), new Theatre("Theatre 3"))));
+        int numOfCustomers = 100;
+        ExecutorService executorService = Executors.newFixedThreadPool(numOfCustomers);
+        for (int i = 0; i < numOfCustomers; i++) {
+            executorService.submit(new Customer(cinema, "C"+((i + 1))));
         }
-        while (!executorService.isShutdown()) {
+        executorService.shutdown();
+        while (!executorService.isTerminated()) {
+            // Waiting for all tasks to complete
         }
-        for(int i = 0; i < cinema.theatres.length; i++){
-            System.out.println(cinema.theatres[i].theatreName + ":\n");
-            for(int j = 0; j < cinema.theatres[i].seats.length; j++){
-                System.out.print(cinema.theatres[i].seats[j]);
+
+        // Output the final status of seats in each theatre
+        for (Theatre theatre : cinema.theatres) {
+            System.out.println(theatre.theatreName + ":");
+            for (String seat : theatre.seats) {
+                System.out.print((seat != null ? seat : "-") + " ");
             }
+            System.out.println();
         }
     }
 }
