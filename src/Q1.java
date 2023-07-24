@@ -1,4 +1,5 @@
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.Random;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -75,23 +76,10 @@ class Theatre {
                 }
                 availableSeats = availableSeats - numberOfSeats;
                 for (int i = 0; i < customerSeats.size(); i++) {
-//                    System.out.println(Thread.currentThread().getName() + " booking seat " + customerSeats[i] + " for " + theatreName);
+                    System.out.println(customerName + " booking seat " + customerSeats.get(i) + " for " + theatreName);
                 }
                 for (int i = 0; i < customerSeats.size(); i++) {
                     seats[customerSeats.get(i)] = customerName;
-//                    System.out.println(Thread.currentThread().getName() + " has booked seat " + customerSeats[i] + " for " + theatreName);
-                }
-                for (int i = 0; i < seats.length; i++){
-                    if(seats[i] == null){
-                        System.out.println("empty");
-                    }
-                    else {
-                        System.out.println(seats[i]);
-                    }
-                }
-//                System.out.println(customerName);
-                for(int i = 0; i < customerSeats.size(); i++){
-                    System.out.println(customerName + " booking " + customerSeats.get(i) + " at " + theatreName);
                 }
             } else {
                 isFull = true;
@@ -119,6 +107,15 @@ class Customer implements Runnable {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        for(Theatre theatre : cinema.theatres){
+            int index = 0;
+            for(String seat : theatre.seats){
+                if(seat == customerName){
+                    System.out.println(customerName + " booked " + index + " at " + theatre.theatreName);
+                }
+                index++;
+            }
+        }
     }
 }
 
@@ -139,9 +136,16 @@ public class Q1 {
         for (Theatre theatre : cinema.theatres) {
             System.out.println(theatre.theatreName + ":");
             for (String seat : theatre.seats) {
-                System.out.print((seat != null ? seat : "-") + " ");
+                if(seat == null){
+                    System.out.print("-");
+                    System.out.print(" ");
+                }
+                else{
+                    System.out.print(seat);
+                    System.out.print(" ");
+                }
             }
-            System.out.println();
+            System.out.println("");
         }
     }
 }
